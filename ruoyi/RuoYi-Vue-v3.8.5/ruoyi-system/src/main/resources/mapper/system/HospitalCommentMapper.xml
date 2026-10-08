@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HospitalCommentMapper">
+    <resultMap type="HospitalComment" id="HospitalCommentResult">
+        <id property="commentId" column="comment_id" />
+        <result property="postId" column="post_id" />
+        <result property="userId" column="user_id" />
+        <result property="authorId" column="author_id" />
+        <result property="authorAccount" column="author_account" />
+        <result property="commentText" column="comment_text" />
+        <result property="audioUrl" column="audio_url" />
+        <result property="audioDuration" column="audio_duration" />
+        <result property="replyToId" column="reply_to_id" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+    
+    <sql id="selectCommentVo">
+        select c.comment_id, c.post_id, c.user_id,
+               coalesce(nullif(u.nick_name, ''), u.user_name, c.author_id) as author_id,
+               coalesce(u.user_name, c.author_id) as author_account,
+               c.comment_text, c.audio_url, c.audio_duration, c.reply_to_id, c.create_time
+        from sys_hospital_comment c
+        left join sys_user u on u.user_id = c.user_id and u.del_flag = '0'
+    </sql>
+
+    <select id="selectCommentsByPostId" parameterType="Long" resultMap="HospitalCommentResult">
+        <include refid="selectCommentVo" />
+        where c.post_id = #{postId}
+        order by c.comment_id asc
+    </select>
+
+    <select id="selectCommentById" parameterType="Long" resultMap="HospitalCommentResult">
+        <include refid="selectCommentVo" />
+        where c.comment_id = #{commentId}
+    </select>
+
+    <insert id="insertComment" parameterType="HospitalComment" useGeneratedKeys="true" keyProperty="commentId">
+        insert into sys_hospital_comment (post_id, user_id, author_id, comment_text, audio_url, audio_duration, reply_to_id, create_time)
+        values (#{postId}, #{userId}, #{authorId}, #{commentText}, #{audioUrl}, #{audioDuration}, #{replyToId}, sysdate())
+    </insert>
+
+    <delete id="deleteCommentById" parameterType="Long">
+        delete from sys_hospital_comment where comment_id = #{commentId}
+    </delete>
+</mapper>

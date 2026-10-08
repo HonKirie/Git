@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HospitalPostMapper">
+    <resultMap type="HospitalPost" id="HospitalPostResult">
+        <id property="postId" column="post_id" />
+        <result property="userId" column="user_id" />
+        <result property="authorId" column="author_id" />
+        <result property="authorAccount" column="author_account" />
+        <result property="crop" column="crop" />
+        <result property="plantingTime" column="planting_time" />
+        <result property="description" column="description" />
+        <result property="mediaType" column="media_type" />
+        <result property="mediaFiles" column="media_files" />
+        <result property="location" column="location" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+    <sql id="selectPostVo">
+        select p.post_id, p.user_id,
+               coalesce(nullif(u.nick_name, ''), u.user_name, p.author_id) as author_id,
+               coalesce(u.user_name, p.author_id) as author_account,
+               p.crop, p.planting_time, p.description, p.media_type, p.media_files, p.location, p.created_at
+        from sys_hospital_post p
+        left join sys_user u on u.user_id = p.user_id and u.del_flag = '0'
+    </sql>
+    <select id="selectPostList" resultMap="HospitalPostResult">
+        <include refid="selectPostVo" /> order by p.post_id desc
+    </select>
+    <select id="selectPostById" parameterType="Long" resultMap="HospitalPostResult">
+        <include refid="selectPostVo" /> where p.post_id = #{postId}
+    </select>
+    <insert id="insertPost" parameterType="HospitalPost" useGeneratedKeys="true" keyProperty="postId">
+        insert into sys_hospital_post
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="postId != null">post_id,</if>
+            user_id, author_id, crop, planting_time, description, media_type, media_files, location, created_at
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="postId != null">#{postId},</if>
+            #{userId}, #{authorId}, #{crop}, #{plantingTime}, #{description}, #{mediaType}, #{mediaFiles}, #{location}, #{createdAt}
+        </trim>
+    </insert>
+    <delete id="deletePostById" parameterType="Long">
+        delete from sys_hospital_post where post_id = #{postId}
+    </delete>
+</mapper>

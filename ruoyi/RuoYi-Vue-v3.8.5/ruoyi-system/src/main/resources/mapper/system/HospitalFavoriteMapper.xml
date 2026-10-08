@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.HospitalFavoriteMapper">
+<resultMap id="R" type="HospitalFavorite"><id property="favoriteId" column="favorite_id"/><result property="userId" column="user_id"/><result property="authorAccount" column="author_account"/><result property="postId" column="post_id"/><result property="createdAt" column="created_at"/><result property="originalAuthorId" column="original_author_id"/><result property="originalAuthorAccount" column="original_author_account"/><result property="crop" column="crop"/><result property="plantingTime" column="planting_time"/><result property="description" column="description"/></resultMap>
+<select id="selectByAuthorAccount" resultMap="R">select f.* from sys_hospital_favorite f inner join sys_hospital_post p on p.post_id=f.post_id where f.author_account=#{account} order by f.favorite_id desc</select>
+<select id="selectByUserAndPost" resultMap="R">select * from sys_hospital_favorite where user_id=#{userId} and post_id=#{postId} limit 1</select>
+<insert id="insert" parameterType="HospitalFavorite" useGeneratedKeys="true" keyProperty="favoriteId">insert into sys_hospital_favorite(user_id,author_account,post_id,created_at,original_author_id,original_author_account,crop,planting_time,description) select #{userId},#{authorAccount},p.post_id,#{createdAt},#{originalAuthorId},#{originalAuthorAccount},#{crop},#{plantingTime},#{description} from sys_hospital_post p where p.post_id=#{postId}</insert>
+</mapper>

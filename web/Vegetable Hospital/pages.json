@@ -1,0 +1,79 @@
+{
+	"pages": [{
+		"path": "pages/index/index",
+		"style": {
+			"navigationStyle": "custom",
+			"backgroundColor": "#f6f7f6"
+		}
+	}, {
+		"path": "pages/hospital/index",
+		"style": {
+			"navigationStyle": "custom",
+			"backgroundColor": "#f1f3f4"
+		}
+	}, {
+		"path": "pages/hospital/publish",
+		"style": {
+			"navigationStyle": "custom",
+			"backgroundColor": "#f4f5f5"
+		}
+	}, {
+		"path": "pages/profile/favorites",
+		"style": { "navigationBarTitleText": "我的收藏", "navigationStyle": "custom", "backgroundColor": "#f4f6f5" }
+	}, {
+		"path": "pages/hospital/detail",
+		"style": {
+			"navigationStyle": "custom",
+			"backgroundColor": "#f4f5f5"
+		}
+	}, {
+		"path": "pages/local/index",
+		"style": {
+			"navigationBarTitleText": "地方特色",
+			"navigationStyle": "custom"
+		}
+	}, {
+		"path": "pages/nearby/index",
+		"style": {
+			"navigationBarTitleText": "附近农资",
+			"navigationStyle": "custom"
+		}
+	}, {
+		"path": "pages/message/index",
+		"style": {
+			"navigationBarTitleText": "消息",
+			"navigationStyle": "custom"
+		}
+	}, {
+		"path": "pages/profile/index",
+		"style": {
+			"navigationBarTitleText": "我的",
+			"navigationStyle": "custom"
+		}
+	}, {
+		"path": "pages/register/index",
+		"style": {
+			"navigationBarTitleText": "注册",
+			"navigationStyle": "custom"
+		}
+	}, {
+		"path": "pages/profile/edit",
+		"style": {
+			"navigationBarTitleText": "个人信息设置",
+			"navigationStyle": "custom",
+			"backgroundColor": "#f4f5f5"
+		}
+	}, {
+		"path": "pages/profile/user",
+		"style": { "navigationBarTitleText": "用户动态", "navigationStyle": "custom", "backgroundColor": "#f4f6f5" }
+	}],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "田园采风",
+		"navigationBarBackgroundColor": "#46d69d",
+		"backgroundColor": "#f6f7f6",
+		"app-plus": {
+			"background": "#efeff4"
+		}
+	}
+}

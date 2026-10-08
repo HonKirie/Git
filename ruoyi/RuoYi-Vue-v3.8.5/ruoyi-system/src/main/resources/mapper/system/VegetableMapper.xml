@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.VegetableMapper">
+    <resultMap type="VegetableCategory" id="CategoryResult">
+        <id property="categoryId" column="category_id" />
+        <result property="parentId" column="parent_id" />
+        <result property="ancestors" column="ancestors" />
+        <result property="categoryName" column="category_name" />
+        <result property="orderNum" column="order_num" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+    <resultMap type="VegetableRecord" id="RecordResult">
+        <id property="recordId" column="record_id" />
+        <result property="categoryId" column="category_id" />
+        <result property="userId" column="user_id" />
+        <result property="plantingDays" column="planting_days" />
+        <result property="issue" column="issue" />
+        <result property="categoryName" column="category_name" />
+        <result property="userName" column="user_name" />
+        <result property="nickName" column="nick_name" />
+        <result property="sourceType" column="source_type" />
+        <result property="sourcePostId" column="source_post_id" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+    <select id="selectCategories" resultMap="CategoryResult">
+        select category_id, parent_id, ancestors, category_name, order_num, status, create_time
+        from sys_vegetable_category order by parent_id, order_num, category_id
+    </select>
+    <select id="selectCategory" resultMap="CategoryResult">
+        select category_id, parent_id, ancestors, category_name, order_num, status, create_time
+        from sys_vegetable_category where category_id = #{categoryId}
+    </select>
+    <select id="countSibling" resultType="int">
+        select count(1) from sys_vegetable_category
+        where parent_id = #{parentId} and category_name = #{name}
+        <if test="excludeId != null">and category_id != #{excludeId}</if>
+    </select>
+    <select id="countChildren" resultType="int">select count(1) from sys_vegetable_category where parent_id = #{categoryId}</select>
+    <select id="countDescendants" resultType="int">select count(1) from sys_vegetable_category where category_id = #{candidateParentId} and find_in_set(#{categoryId}, ancestors)</select>
+    <select id="countRecords" resultType="int">select count(1) from sys_vegetable_record where category_id = #{categoryId}</select>
+    <insert id="insertCategory" parameterType="VegetableCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        insert into sys_vegetable_category (parent_id, ancestors, category_name, order_num, status, create_by, create_time)
+        values (#{parentId}, #{ancestors}, #{categoryName}, #{orderNum}, #{status}, #{createBy}, now())
+    </insert>
+    <update id="updateCategory" parameterType="VegetableCategory">
+        update sys_vegetable_category set parent_id = #{parentId}, ancestors = #{ancestors}, category_name = #{categoryName},
+        order_num = #{orderNum}, status = #{status}, update_by = #{updateBy}, update_time = now()
+        where category_id = #{categoryId}
+    </update>
+    <update id="updateChildrenAncestors">
+        update sys_vegetable_category
+        set ancestors = concat(#{newAncestors}, substring(ancestors, length(#{oldAncestors}) + 1))
+        where category_id != #{categoryId} and find_in_set(#{categoryId}, ancestors)
+    </update>
+    <delete id="deleteCategory">delete from sys_vegetable_category where category_id = #{categoryId}</delete>
+    <select id="selectRecords" resultMap="RecordResult">
+        select records.record_id, records.category_id, records.user_id, records.planting_days,
+               records.issue, records.create_time, records.category_name, records.user_name, records.nick_name,
+               records.source_type, records.source_post_id
+        from (
+            select r.record_id, r.category_id, r.user_id, r.planting_days, r.issue, r.create_time,
+                   c.category_name, u.user_name, u.nick_name, 'record' as source_type, null as source_post_id
+            from sys_vegetable_record r
+            join sys_vegetable_category c on c.category_id = r.category_id
+            join sys_user u on u.user_id = r.user_id and u.del_flag = '0'
+            where r.category_id in
+            <foreach collection="categoryIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            <if test="userId != null">and r.user_id = #{userId}</if>
+            union all
+            select 1000000000 + p.post_id as record_id, c.category_id, p.user_id,
+                   case when p.planting_time like '%以上%' then 99999 when p.planting_time regexp '^[0-9]+天$' then replace(p.planting_time, '天', '') + 0 else 0 end as planting_days,
+                   p.description as issue,
+                   coalesce(str_to_date(p.created_at, '%Y/%m/%d %H:%i'), str_to_date(p.created_at, '%Y-%m-%d %H:%i:%s'), now()) as create_time,
+                   c.category_name, u.user_name, u.nick_name,
+                   'question' as source_type, p.post_id as source_post_id
+            from sys_hospital_post p
+            join sys_vegetable_category c on c.category_name = p.crop and c.status = '0'
+            join sys_user u on u.user_id = p.user_id and u.del_flag = '0'
+            where c.category_id in
+            <foreach collection="categoryIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+            <if test="userId != null">and p.user_id = #{userId}</if>
+        ) records
+        order by records.record_id desc
+    </select>
+    <select id="selectRecord" resultMap="RecordResult">
+        select r.record_id, r.category_id, r.user_id, r.planting_days, r.issue, r.create_time,
+               c.category_name, u.user_name, u.nick_name
+        from sys_vegetable_record r
+        join sys_vegetable_category c on c.category_id = r.category_id
+        join sys_user u on u.user_id = r.user_id
+        where r.record_id = #{recordId}
+    </select>
+    <insert id="insertRecord" parameterType="VegetableRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into sys_vegetable_record (category_id, user_id, planting_days, issue, create_by, create_time)
+        values (#{categoryId}, #{userId}, #{plantingDays}, #{issue}, #{createBy}, now())
+    </insert>
+    <update id="updateRecord" parameterType="VegetableRecord">
+        update sys_vegetable_record set category_id = #{categoryId}, user_id = #{userId},
+        planting_days = #{plantingDays}, issue = #{issue}, update_by = #{updateBy}, update_time = now()
+        where record_id = #{recordId}
+    </update>
+    <delete id="deleteRecord">delete from sys_vegetable_record where record_id = #{recordId}</delete>
+</mapper>

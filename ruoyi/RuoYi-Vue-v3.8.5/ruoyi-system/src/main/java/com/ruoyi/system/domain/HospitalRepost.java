@@ -1,0 +1,6 @@
+package com.ruoyi.system.domain;
+public class HospitalRepost {
+ private Long repostId,userId,postId; private String authorAccount,createdAt,originalAuthorId,originalAuthorAccount,crop,plantingTime,description;
+ public Long getRepostId(){return repostId;} public void setRepostId(Long v){repostId=v;} public Long getUserId(){return userId;} public void setUserId(Long v){userId=v;} public Long getPostId(){return postId;} public void setPostId(Long v){postId=v;}
+ public String getAuthorAccount(){return authorAccount;} public void setAuthorAccount(String v){authorAccount=v;} public String getCreatedAt(){return createdAt;} public void setCreatedAt(String v){createdAt=v;} public String getOriginalAuthorId(){return originalAuthorId;} public void setOriginalAuthorId(String v){originalAuthorId=v;} public String getOriginalAuthorAccount(){return originalAuthorAccount;} public void setOriginalAuthorAccount(String v){originalAuthorAccount=v;} public String getCrop(){return crop;} public void setCrop(String v){crop=v;} public String getPlantingTime(){return plantingTime;} public void setPlantingTime(String v){plantingTime=v;} public String getDescription(){return description;} public void setDescription(String v){description=v;}
+}

@@ -1,0 +1,29 @@
+# Java / Maven build output
+**/target/
+**/*.class
+
+# Node dependencies and frontend build output
+**/node_modules/
+**/dist/
+**/.cache/
+
+# uni-app generated output
+**/unpackage/
+
+# Runtime logs and local uploads
+**/logs/
+**/D:/
+
+# IDE and OS files
+**/.idea/
+**/.vscode/
+.DS_Store
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Temporary files
+*.log
+*.tmp
+*.swp

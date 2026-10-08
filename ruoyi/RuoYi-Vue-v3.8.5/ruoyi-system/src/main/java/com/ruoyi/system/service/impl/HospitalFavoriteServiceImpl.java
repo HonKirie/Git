@@ -1,0 +1,3 @@
+package com.ruoyi.system.service.impl;
+import java.util.List; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.stereotype.Service; import com.ruoyi.system.domain.HospitalFavorite; import com.ruoyi.system.mapper.HospitalFavoriteMapper; import com.ruoyi.system.service.IHospitalFavoriteService;
+@Service public class HospitalFavoriteServiceImpl implements IHospitalFavoriteService { @Autowired private HospitalFavoriteMapper mapper; public List<HospitalFavorite> selectByAuthorAccount(String a){return mapper.selectByAuthorAccount(a);} public HospitalFavorite selectByUserAndPost(Long u,Long p){return mapper.selectByUserAndPost(u,p);} public int insert(HospitalFavorite r){return mapper.insert(r);} }

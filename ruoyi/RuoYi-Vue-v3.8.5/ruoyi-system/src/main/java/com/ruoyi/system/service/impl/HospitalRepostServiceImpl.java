@@ -1,0 +1,3 @@
+package com.ruoyi.system.service.impl;
+import java.util.List; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.stereotype.Service; import com.ruoyi.system.domain.HospitalRepost; import com.ruoyi.system.mapper.HospitalRepostMapper; import com.ruoyi.system.service.IHospitalRepostService;
+@Service public class HospitalRepostServiceImpl implements IHospitalRepostService { @Autowired private HospitalRepostMapper mapper; public List<HospitalRepost> selectByAuthorAccount(String a){return mapper.selectByAuthorAccount(a);} public HospitalRepost selectByUserAndPost(Long u,Long p){return mapper.selectByUserAndPost(u,p);} public int insert(HospitalRepost r){return mapper.insert(r);} }
