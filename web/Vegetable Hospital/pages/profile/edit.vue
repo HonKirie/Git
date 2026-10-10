@@ -1,7 +1,7 @@
 <template>
 	<view class="page">
 		<view class="hero">
-			<view class="status-bar"><text>9:41</text><view class="status-symbols"><text>▮▮▮</text><text>◒</text><view class="battery"><view /></view></view></view>
+			<view class="system-status-inset" />
 			<view class="nav-row"><text class="back" @tap="goBack">‹</text><text class="nav-title">个人信息设置</text><view class="nav-space" /></view>
 			<view class="avatar-block" @tap="chooseAvatar">
 				<view class="avatar-wrap"><image class="avatar" :src="avatarUrl" mode="aspectFill" /><view class="camera"><uni-icons type="camera-filled" size="18" color="#fff" /></view></view>
@@ -184,7 +184,7 @@ export default {
 <style scoped>
 .page { min-height: 100vh; background: #f3f4f4; color: #303532; }
 .hero { height: 420rpx; padding: 22rpx 28rpx 0; box-sizing: border-box; background: linear-gradient(145deg, #59e4ad 0%, #36c986 100%); }
-.status-bar { height: 66rpx; padding: 0 42rpx; display: flex; align-items: center; justify-content: space-between; color: #123b2c; font-size: 28rpx; font-weight: 600; }.status-symbols { display: flex; align-items: center; gap: 12rpx; font-size: 20rpx; }.battery { width: 38rpx; height: 19rpx; padding: 3rpx; border: 2rpx solid #123b2c; border-radius: 5rpx; box-sizing: border-box; }.battery view { width: 24rpx; height: 9rpx; border-radius: 1rpx; background: #123b2c; }
+
 .nav-row { height: 76rpx; display: flex; align-items: center; justify-content: space-between; }.back { width: 70rpx; color: #fff; font-size: 72rpx; line-height: 60rpx; }.nav-title { color: #14583d; font-size: 32rpx; font-weight: 600; }.nav-space { width: 70rpx; }
 .avatar-block { display: flex; align-items: flex-end; justify-content: center; margin-top: 22rpx; }.avatar-wrap { position: relative; width: 180rpx; height: 180rpx; }.avatar { width: 180rpx; height: 180rpx; border: 6rpx solid rgba(255,255,255,.35); border-radius: 50%; background: #fff; box-sizing: border-box; }.camera { position: absolute; right: -4rpx; bottom: -2rpx; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; border: 5rpx solid #45d395; border-radius: 50%; background: #202624; box-sizing: border-box; }.avatar-label { margin: 0 0 13rpx 24rpx; color: #ecfff6; font-size: 26rpx; }
 .info-card { position: relative; z-index: 2; min-height: 560rpx; margin: -30rpx 10rpx 0; padding: 28rpx 38rpx; border-radius: 24rpx 24rpx 0 0; background: #fff; box-sizing: border-box; }.info-row { min-height: 100rpx; display: flex; align-items: center; border-bottom: 1rpx solid #f1f2f2; }.info-row:last-child { border-bottom: 0; }.intro-row { min-height: 142rpx; align-items: flex-start; padding: 28rpx 0; box-sizing: border-box; }.label { width: 154rpx; flex: 0 0 154rpx; color: #333936; font-size: 31rpx; }.value { min-width: 0; flex: 1; color: #747c78; font-size: 27rpx; line-height: 40rpx; text-align: left; overflow-wrap: anywhere; }.intro { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.muted { color: #adb3b0; }.arrow { width: 40rpx; color: #8b928e; font-size: 54rpx; line-height: 1; text-align: right; }.account-row { padding-right: 40rpx; }.account { color: #8b928e; }

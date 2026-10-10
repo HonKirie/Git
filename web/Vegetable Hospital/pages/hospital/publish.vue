@@ -1,7 +1,7 @@
 <template>
 	<view class="page">
 		<view class="green-header">
-			<view class="status-bar"><text>9:41</text><view class="status-icons"><text>▮▮▮</text><text>◒</text><view class="battery"><view /></view></view></view>
+			<view class="system-status-inset" />
 			<view class="nav-row"><text class="back" @tap="goBack">‹</text><text class="nav-title">发布问题</text><text class="help" @tap="showHelp">查看说明</text></view>
 			<view class="field-label"><text>作物种类:</text><text class="supplement" @tap="showTip('补充种类功能暂未开放')">补充种类</text></view>
 			<view class="select-field" @tap="chooseCrop"><text :class="{ placeholder: !crop }">{{ crop || '请选择作物类型' }}</text><text class="chevron">›</text></view>
@@ -12,7 +12,7 @@
 
 		<view class="form-body">
 			<textarea v-model="description" class="description" maxlength="1000" placeholder="请详细描述你的问题" placeholder-class="placeholder" />
-			<view class="publish-type"><text class="type-label">发布类型:</text><view class="type-option" @tap="mediaType = 'image'"><view class="radio" :class="{ checked: mediaType === 'image' }"><view v-if="mediaType === 'image'" /></view><text :class="{ selected: mediaType === 'image' }">图片</text></view><view class="type-option" @tap="mediaType = 'video'"><view class="radio" :class="{ checked: mediaType === 'video' }"><view v-if="mediaType === 'video'" /></view><text :class="{ selected: mediaType === 'video' }">短视频</text></view></view>
+			<view class="publish-type"><text class="type-label">发布类型:</text><view class="type-option" @tap="changeMediaType('image')"><view class="radio" :class="{ checked: mediaType === 'image' }"><view v-if="mediaType === 'image'" /></view><text :class="{ selected: mediaType === 'image' }">图片</text></view><view class="type-option" @tap="changeMediaType('video')"><view class="radio" :class="{ checked: mediaType === 'video' }"><view v-if="mediaType === 'video'" /></view><text :class="{ selected: mediaType === 'video' }">短视频</text></view></view>
 			<view class="media-list">
 				<view v-for="(item, index) in mediaFiles" :key="item" class="media-item">
 					<image v-if="mediaType === 'image'" :src="item" mode="aspectFill" />
@@ -22,20 +22,23 @@
 				<view v-if="mediaFiles.length < mediaLimit" class="media-add" @tap="chooseMedia"><view class="media-plus"><i /><i /></view></view>
 			</view>
 			<view class="location" @tap="chooseLocation"><text class="location-pin">●</text><text>{{ location || '添加问题发生的位置' }}</text><text class="location-arrow">›</text></view>
-			<button class="submit-button" @tap="submitQuestion">发布</button>
+			<button class="submit-button" :disabled="submitting" :loading="submitting" @tap="submitQuestion">{{ submitting ? '发布中' : '发布' }}</button>
 		</view>
 	</view>
 </template>
 
 <script>
+import { uploadPostMedia } from '@/utils/post-media.js'
 export default {
 	data() {
-		return { crop: '', plantingTime: '', description: '', mediaType: 'video', mediaFiles: [], location: '', cropOptions: ['黄瓜', '茄子', '辣椒', '番茄', '丝瓜'], timeOptions: ['刚定植', '1-7天', '8-20天', '20天以上'] }
+		return { submitting: false, uploadedMedia: {}, crop: '', plantingTime: '', description: '', mediaType: 'video', mediaFiles: [], location: '', cropOptions: ['黄瓜', '茄子', '辣椒', '番茄', '丝瓜'], timeOptions: ['刚定植', '1-7天', '8-20天', '20天以上'] }
 	},
 	computed: {
 		mediaLimit() { return this.mediaType === 'image' ? 9 : 1 }
 	},
-	onLoad() { this.loadCrops() },
+	onShow() {
+		this.loadCrops()
+	},
 	methods: {
 		loadCrops() {
 			uni.request({
@@ -61,17 +64,25 @@ export default {
 			uni.showActionSheet({ itemList: this.timeOptions, success: res => { this.plantingTime = this.timeOptions[res.tapIndex] } })
 		},
 		chooseMedia() {
+			if (this.submitting) return
+			if (this.mediaFiles.length >= this.mediaLimit) return
 			if (this.mediaType === 'image') {
 				uni.chooseImage({ count: this.mediaLimit - this.mediaFiles.length, sizeType: ['compressed'], sourceType: ['album', 'camera'], success: res => { this.mediaFiles = [...this.mediaFiles, ...res.tempFilePaths] } })
 				return
 			}
 			uni.chooseVideo({ sourceType: ['album', 'camera'], compressed: true, success: res => { this.mediaFiles = [res.tempFilePath] } })
 		},
-		removeMedia(index) { this.mediaFiles.splice(index, 1) },
+		removeMedia(index) { if (!this.submitting) this.mediaFiles.splice(index, 1) },
+		changeMediaType(type) {
+			if (this.submitting || type === this.mediaType) return
+			this.mediaType = type
+			this.mediaFiles = []
+		},
 		chooseLocation() {
 			uni.chooseLocation({ success: res => { this.location = res.address || res.name } })
 		},
-		submitQuestion() {
+		async submitQuestion() {
+			if (this.submitting) return
 			if (!this.crop) return this.showTip('请选择作物类型')
 			if (!this.plantingTime) return this.showTip('请选择定植时间')
 			if (!this.description.trim()) return this.showTip('请填写问题描述')
@@ -80,18 +91,34 @@ export default {
 				uni.showToast({ title: '请先登录后再发布', icon: 'none' })
 				return
 			}
+			this.submitting = true
+			const draft = { crop: this.crop, plantingTime: this.plantingTime, description: this.description.trim(), mediaType: this.mediaType, location: this.location, createdAt: this.formatDate(new Date()) }
+			const files = [...this.mediaFiles]
+			const mediaFiles = []
+			try {
+				for (let index = 0; index < files.length; index++) {
+					uni.showLoading({ title: `上传 ${index + 1}/${files.length}`, mask: true })
+					const path = files[index]
+					if (!this.uploadedMedia[path]) this.uploadedMedia[path] = await uploadPostMedia(path, token)
+					mediaFiles.push(this.uploadedMedia[path])
+				}
+			} catch (error) {
+				uni.hideLoading()
+				this.submitting = false
+				if (error.code === 401) {
+					uni.removeStorageSync('token')
+					uni.removeStorageSync('loginSession')
+				}
+				return this.showTip(error.message || '上传失败，请重试')
+			}
+			uni.showLoading({ title: '正在发布', mask: true })
 			uni.request({
 				url: 'http://123.57.255.171:8080/mobile/posts',
 				method: 'POST',
 				header: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' },
 				data: {
-					crop: this.crop,
-					plantingTime: this.plantingTime,
-					description: this.description.trim(),
-					mediaType: this.mediaType,
-					mediaFiles: JSON.stringify(this.mediaFiles),
-					location: this.location,
-					createdAt: this.formatDate(new Date())
+					...draft,
+					mediaFiles: JSON.stringify(mediaFiles)
 				},
 				success: res => {
 					const body = res.data || {}
@@ -104,7 +131,8 @@ export default {
 					if (body.code !== 200) return this.showTip(body.msg || '发布失败')
 					uni.redirectTo({ url: '/pages/hospital/index' })
 				},
-				fail: () => this.showTip('无法连接服务器，请稍后重试')
+				fail: () => this.showTip('无法连接服务器，请稍后重试'),
+				complete: () => { uni.hideLoading(); this.submitting = false }
 			})
 		},
 		formatDate(date) {
@@ -119,7 +147,7 @@ export default {
 .page { min-height: 100vh; background: #f4f5f5; color: #333; }
 .green-header { position: relative; padding: 24rpx 48rpx 0; background: linear-gradient(135deg, #54dfa5, #32bb7b); }
 .green-header::after { position: absolute; right: 0; bottom: -34rpx; left: 0; height: 70rpx; border-radius: 0 0 50% 50% / 0 0 35% 35%; background: linear-gradient(135deg, #32bb7b, #32bb7b); content: ''; }
-.status-bar { height: 70rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 48rpx; color: #102d21; font-size: 28rpx; font-weight: 600; }.status-icons { display: flex; align-items: center; gap: 12rpx; font-size: 20rpx; }.battery { width: 38rpx; height: 19rpx; padding: 3rpx; border: 2rpx solid #102d21; border-radius: 5rpx; box-sizing: border-box; }.battery view { width: 24rpx; height: 9rpx; background: #102d21; border-radius: 1rpx; }
+
 .nav-row { height: 76rpx; display: flex; align-items: center; justify-content: space-between; color: #173f30; }.back { width: 60rpx; font-size: 66rpx; line-height: 60rpx; }.nav-title { font-size: 34rpx; }.help { width: 120rpx; font-size: 23rpx; text-align: right; }
 .field-label { position: relative; z-index: 1; display: flex; justify-content: space-between; margin-top: 28rpx; color: #174c35; font-size: 25rpx; }.supplement { color: #278c60; }.select-field { position: relative; z-index: 1; height: 72rpx; margin-top: 14rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: space-between; border-radius: 17rpx; background: #fff; color: #444; font-size: 24rpx; }.placeholder { color: #aaa; }.chevron { color: #777; font-size: 48rpx; line-height: 1; }.planting-label { margin-top: 22rpx; }.description-label { position: relative; z-index: 1; margin: 20rpx 16rpx 0; color: #174c35; font-size: 25rpx; }
 .form-body { position: relative; z-index: 2; padding: 0 48rpx 50rpx; }.description { width: 100%; height: 280rpx; padding: 22rpx 24rpx; border-radius: 18rpx; background: #fff; color: #333; font-size: 25rpx; line-height: 1.6; }.placeholder { color: #aaa; }

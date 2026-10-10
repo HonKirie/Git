@@ -15,6 +15,7 @@
 </template>
 
 <script>
+import { mediaUrl } from '@/utils/post-media.js'
 import VoiceComment from '../../components/voice-comment/voice-comment.vue'
 export default {
 	components: { VoiceComment },
@@ -143,6 +144,7 @@ export default {
 					if (body.code !== 200 || !body.data) return
 					let mediaFiles = []
 					try { mediaFiles = JSON.parse(body.data.mediaFiles || '[]') } catch (e) {}
+					mediaFiles = Array.isArray(mediaFiles) ? mediaFiles.map(mediaUrl) : []
 					this.post = { id: body.data.postId, authorId: body.data.authorId, authorAccount: body.data.authorAccount, crop: body.data.crop, plantingTime: body.data.plantingTime, description: body.data.description, mediaType: body.data.mediaType, mediaFiles, location: body.data.location, createdAt: body.data.createdAt }
 					this.loadComments()
 				}

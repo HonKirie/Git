@@ -17,6 +17,10 @@
 	@import '@/uni_modules/uni-scss/index.scss';
 	/* #ifndef APP-NVUE */
 	@import '@/static/customicons.css';
+	.system-status-inset {
+		height: var(--status-bar-height, 0px);
+		flex-shrink: 0;
+	}
 	// 设置整个项目的背景色
 	page {
 		background-color: #f5f5f5;

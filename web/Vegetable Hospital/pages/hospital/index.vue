@@ -1,7 +1,7 @@
 <template>
 	<view class="page">
 		<view v-if="!categoryExpanded" class="hospital-header">
-			<view class="status-bar"><text>9:41</text><view class="status-icons"><text>▮▮▮</text><text>◒</text><view class="battery"><view /></view></view></view>
+			<view class="system-status-inset" />
 			<view class="search-row">
 				<text class="back" @tap="goHome">‹</text>
 				<view class="search-box"><text class="search-icon">⌕</text><text class="search-placeholder">请输入病害名称</text><text class="search-button">搜索</text></view>
@@ -9,7 +9,7 @@
 			</view>
 		</view>
 		<view v-else class="channel-header">
-			<view class="status-bar"><text>9:41</text><view class="status-icons"><text>▮▮▮</text><text>◒</text><view class="battery"><view /></view></view></view>
+			<view class="system-status-inset" />
 			<view class="channel-header-row"><text class="channel-back" @tap="closeChannelPanel">‹</text><text class="channel-help">找不到种植的作物？ <text class="help-icon">i</text></text></view>
 		</view>
 
@@ -58,6 +58,7 @@
 				<text class="group-title">隐藏频道</text>
 				<view class="channel-divider" />
 				<text class="group-title crop-title">蔬菜分类</text>
+				<view class="custom-crop-row"><input v-model="customCropDraft" class="custom-crop-input" maxlength="20" placeholder="输入作物名称" confirm-type="done" @confirm="addCustomCrop" /><button class="custom-crop-add" @tap="addCustomCrop">添加</button></view>
 				<view class="channel-tags">
 					<view v-for="(channel, index) in hiddenChannels" :key="`hidden-${channel}-${index}`" class="channel-tag"><text>{{ channel }}</text><text class="add-mark" @tap.stop="addChannel(channel, index)">＋</text></view>
 				</view>
@@ -70,9 +71,10 @@
 </template>
 
 <script>
+import { mediaUrl } from '@/utils/post-media.js'
 export default {
 	data() {
-		return { activeCategory: '全部', favorited: false, categoryExpanded: false, editMode: false, hospitalPosts: [], postFavorites: {}, postComments: {}, commentDrafts: {}, replyTargets: {}, commentPostId: null, selectedChannels: ['全部', '黄瓜', '茄子', '辣椒', '番茄'], hiddenChannels: ['丝瓜'] }
+		return { customCropDraft: '', addingCrop: false, activeCategory: '全部', favorited: false, categoryExpanded: false, editMode: false, hospitalPosts: [], postFavorites: {}, postComments: {}, commentDrafts: {}, replyTargets: {}, commentPostId: null, selectedChannels: ['全部', '黄瓜', '茄子', '辣椒', '番茄'], hiddenChannels: ['丝瓜'] }
 	},
 	computed: {
 		filteredHospitalPosts() {
@@ -104,6 +106,33 @@ export default {
 			this.saveChannels()
 		},
 		goHome() { uni.reLaunch({ url: '/pages/index/index' }) },
+		addCustomCrop() {
+			if (!this.isLoggedIn()) return this.requireLogin('登录后才能添加作物')
+			const name = this.customCropDraft.trim()
+			if (!name) return uni.showToast({ title: '请输入作物名称', icon: 'none' })
+			if (name.length > 20) return uni.showToast({ title: '作物名称最多20个字', icon: 'none' })
+			if (this.selectedChannels.includes(name)) return uni.showToast({ title: '该作物已添加', icon: 'none' })
+			if (this.addingCrop) return
+			this.addingCrop = true
+			uni.request({
+				url: 'http://123.57.255.171:8080/mobile/vegetable-tags',
+				method: 'POST',
+				header: { Authorization: 'Bearer ' + uni.getStorageSync('token'), 'content-type': 'application/json' },
+				data: { dictLabel: name },
+				success: res => {
+					const body = res.data || {}
+					if (this.handleAuthFailure(body)) return
+					if (body.code !== 200) return uni.showToast({ title: body.msg || '添加失败', icon: 'none' })
+					this.hiddenChannels = this.hiddenChannels.filter(item => item !== name)
+					if (!this.selectedChannels.includes(name)) this.selectedChannels.push(name)
+					this.saveChannels()
+					this.customCropDraft = ''
+					this.loadVegetableTags()
+				},
+				fail: () => uni.showToast({ title: '无法连接服务器，请稍后重试', icon: 'none' }),
+				complete: () => { this.addingCrop = false }
+			})
+		},
 		openChannelPanel() { this.categoryExpanded = true; this.editMode = false },
 		closeChannelPanel() { this.categoryExpanded = false; this.editMode = false },
 		toggleFavorite() { this.favorited = !this.favorited },
@@ -166,10 +195,10 @@ export default {
 				fail: () => uni.showToast({ title: '无法连接服务器，请稍后重试', icon: 'none' })
 			})
 		},
-		requireLogin() {
+		requireLogin(content = '登录后才能发表评论') {
 			uni.showModal({
 				title: '请先登录',
-				content: '登录后才能发表评论',
+				content,
 				confirmText: '去登录',
 				cancelText: '取消',
 				success: res => {
@@ -235,6 +264,7 @@ export default {
 		mapPost(post) {
 			let mediaFiles = []
 			try { mediaFiles = JSON.parse(post.mediaFiles || '[]') } catch (e) {}
+			mediaFiles = Array.isArray(mediaFiles) ? mediaFiles.map(mediaUrl) : []
 			return { id: post.postId, authorId: post.authorId, authorAccount: post.authorAccount, crop: post.crop, plantingTime: post.plantingTime, description: post.description, mediaType: post.mediaType, mediaFiles, location: post.location, createdAt: post.createdAt }
 		},
 		loadPosts() {
@@ -301,11 +331,12 @@ export default {
 </script>
 
 <style scoped>
+.custom-crop-row { display: flex; align-items: center; gap: 16rpx; margin: 20rpx 0 28rpx; }.custom-crop-input { flex: 1; min-width: 0; height: 72rpx; padding: 0 20rpx; border: 1rpx solid #ddd; border-radius: 6rpx; font-size: 26rpx; box-sizing: border-box; }.custom-crop-add { flex: 0 0 112rpx; height: 72rpx; margin: 0; padding: 0; border-radius: 6rpx; background: #29b979; color: #fff; font-size: 26rpx; line-height: 72rpx; }
 .comment-copy { min-width: 0; flex: 1; display: block; margin-left: 10rpx; }.comment-line { display: flex; flex-wrap: wrap; align-items: baseline; }.comment-reply-target { margin-right: 8rpx; color: #78a88f; }.comment-tools { display: flex; align-items: center; margin-top: 6rpx; }.comment-reply, .comment-delete { color: #999; font-size: 19rpx; }.comment-delete { margin-left: 18rpx; }.clear-reply { margin: 0 10rpx; color: #999; font-size: 26rpx; }
 .action-icon-box { width: 30rpx; height: 30rpx; display: flex; align-items: center; justify-content: center; flex: 0 0 30rpx; }.post-share-icon { width: 24rpx; height: 24rpx; }.comment-panel { margin-top: 18rpx; padding: 16rpx 18rpx 12rpx; border-top: 1rpx solid #f0f0f0; background: #fafbfa; }.comment-item { display: flex; align-items: flex-start; padding: 10rpx 0; }.comment-avatar { width: 40rpx; height: 40rpx; flex: 0 0 40rpx; border-radius: 50%; background: #d9f3e5; color: #43a97c; font-size: 18rpx; line-height: 40rpx; text-align: center; }.comment-copy { display: flex; flex-wrap: wrap; align-items: baseline; margin-left: 10rpx; font-size: 20rpx; line-height: 30rpx; }.comment-name { margin-right: 10rpx; color: #69a88a; }.comment-text { color: #666; }.comment-input-row { display: flex; align-items: center; margin-top: 10rpx; padding-top: 12rpx; border-top: 1rpx solid #eee; }.comment-input { flex: 1; height: 54rpx; padding: 0 14rpx; border-radius: 27rpx; background: #fff; color: #555; font-size: 20rpx; }.comment-placeholder { color: #b6bdb9; }.comment-submit { margin-left: 12rpx; color: #33b77d; font-size: 20rpx; }
 .page { min-height: 100vh; padding-bottom: 120rpx; background: #f1f3f4; color: #333; }
 .hospital-header { padding: 24rpx 24rpx 28rpx; background: linear-gradient(135deg, #59dfa6, #43c68c); color: #fff; }
-.status-bar { height: 70rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 56rpx; font-size: 28rpx; font-weight: 600; }.status-icons { display: flex; align-items: center; gap: 12rpx; font-size: 20rpx; }.battery { width: 38rpx; height: 19rpx; padding: 3rpx; border: 2rpx solid #fff; border-radius: 5rpx; box-sizing: border-box; }.battery view { width: 24rpx; height: 9rpx; border-radius: 1rpx; background: #fff; }
+
 .search-row { display: flex; align-items: center; gap: 14rpx; }.back { width: 44rpx; font-size: 70rpx; line-height: 62rpx; }.search-box { height: 72rpx; flex: 1; display: flex; align-items: center; padding-left: 22rpx; border: 4rpx solid #fff; border-radius: 40rpx; background: #fff; color: #aaa; }.search-icon { margin-right: 14rpx; color: #999; font-size: 42rpx; line-height: 1; }.search-placeholder { flex: 1; font-size: 25rpx; }.search-button { height: 64rpx; padding: 0 28rpx; border-radius: 34rpx; background: #35d291; color: #fff; font-size: 25rpx; line-height: 64rpx; }.favorite { width: 62rpx; font-size: 24rpx; text-align: center; }
 .category-row { position: relative; height: 84rpx; background: #fff; }.category-scroll { width: calc(100% - 70rpx); height: 84rpx; white-space: nowrap; }.category-list { height: 84rpx; display: flex; align-items: center; padding: 0 24rpx 0 14rpx; box-sizing: border-box; }.category { flex: 0 0 auto; min-width: 80rpx; padding: 10rpx 16rpx; margin-right: 10rpx; border-radius: 28rpx; color: #333; font-size: 27rpx; text-align: center; }.category.active { background: #29c77d; color: #fff; }.category-more { position: absolute; top: 0; right: 0; z-index: 2; width: 70rpx; height: 84rpx; display: flex; align-items: center; justify-content: center; background: #fff; box-shadow: -10rpx 0 14rpx rgba(255, 255, 255, .95); }.more-bars { width: 34rpx; height: 28rpx; display: flex; flex-direction: column; justify-content: space-around; }.more-bars i { display: block; height: 3rpx; border-radius: 2rpx; background: #777; }
 .content-card { min-height: calc(100vh - 390rpx); margin: 0 16rpx; padding: 28rpx 24rpx; border-radius: 18rpx; background: #fff; }.content-heading { display: flex; align-items: center; justify-content: space-between; padding-bottom: 24rpx; border-bottom: 2rpx solid #f0f0f0; color: #666; font-size: 28rpx; }.encyclopedia { padding: 10rpx 18rpx; border-radius: 24rpx; background: #35cf8b; color: #fff; font-size: 22rpx; }.content-empty { min-height: 540rpx; }.post-list { padding-top: 4rpx; }.post-card { padding: 26rpx 0 22rpx; border-bottom: 2rpx solid #f0f0f0; }.post-header { display: flex; align-items: center; }.post-avatar { width: 62rpx; height: 62rpx; margin-right: 14rpx; border-radius: 50%; background: #c7f0dd; color: #20925d; font-size: 27rpx; line-height: 62rpx; text-align: center; }.post-author { min-width: 0; flex: 1; }.post-name { color: #333; font-size: 25rpx; }.post-tag { margin-left: 12rpx; padding: 4rpx 10rpx; border-radius: 16rpx; background: #f6ae35; color: #fff; font-size: 18rpx; }.post-date { display: block; margin-top: 6rpx; color: #999; font-size: 20rpx; }.post-crop { color: #777; font-size: 22rpx; }.post-description { display: block; margin: 18rpx 0; color: #444; font-size: 25rpx; line-height: 1.55; }.post-media { display: flex; flex-wrap: wrap; gap: 10rpx; }.post-media image, .post-video { width: 160rpx; height: 160rpx; background: #eef2ef; }.post-location { display: flex; align-items: center; gap: 8rpx; margin-top: 16rpx; color: #45b98a; font-size: 21rpx; }.post-actions { display: flex; align-items: center; justify-content: space-around; margin-top: 20rpx; color: #999; font-size: 21rpx; }.post-action { display: flex; align-items: center; gap: 8rpx; }.post-action text { font-size: 21rpx; }.post-action .uni-icons { line-height: 1; }.post-share-icon { width: 30rpx; height: 30rpx; }.favorited { color: #ffad2f; }

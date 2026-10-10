@@ -1,3 +1,4 @@
+import { mediaUrl } from '@/utils/post-media.js'
 export default {
 	data() {
 		return {
@@ -40,6 +41,7 @@ export default {
 		mapHospitalPost(post) {
 			let mediaFiles = []
 			try { mediaFiles = JSON.parse(post.mediaFiles || '[]') } catch (e) {}
+			mediaFiles = Array.isArray(mediaFiles) ? mediaFiles.map(mediaUrl) : []
 			return {
 				id: post.postId,
 				authorId: post.authorId,

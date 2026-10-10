@@ -1,23 +1,7 @@
 <template>
 	<view class="page">
 		<view class="hero">
-			<view class="status-bar">
-			<text class="time">9:41</text>
-			<view class="status-icons">
-				<view class="signal">
-					<view class="signal-bar signal-bar-1" />
-					<view class="signal-bar signal-bar-2" />
-					<view class="signal-bar signal-bar-3" />
-					<view class="signal-bar signal-bar-4" />
-				</view>
-				<view class="wifi">
-					<view class="wifi-arc wifi-arc-outer" />
-					<view class="wifi-arc wifi-arc-inner" />
-					<view class="wifi-dot" />
-				</view>
-					<view class="battery"><view class="battery-level" /></view>
-				</view>
-			</view>
+			<view class="system-status-inset" />
 			<view class="top-bar">
 				<view class="location" @click="notify('已定位到寿光市')">
 					<image class="block_8" src="/static/location-pin.png" mode="aspectFit" />
