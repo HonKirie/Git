@@ -1,0 +1,16 @@
+/* VR 大屏面板通用样式：渐变描边 + 深色半透明底（与首页 .cnt 风格一致） */
+.vr-panel {
+  padding: 1px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 深色底落在 body 上（组件根节点 .box 由 Box 组件持有，不可命中） */
+.vr-panel :deep(.box-body) {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 3px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}

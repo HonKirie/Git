@@ -1,0 +1,10 @@
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+  sharp: true
+overrides:
+  "@zip.js/zip.js": "2.7.57"
+  # cesium 1.127.0 与 @cesium/widgets 11.0.0 / @cesium/engine 15.0.0 配套；
+  # 避免 widgets 11.1.0 拉入 engine 16 导致两份引擎代码、instanceof Color 失败
+  "@cesium/engine": "15.0.0"
+  "@cesium/widgets": "11.0.0"
